@@ -11,7 +11,7 @@ namespace CrudOperationADONet.Controllers
     {
         private IConfiguration con;
 
-          public ProductController(IConfiguration connection)
+        public ProductController(IConfiguration connection)
         {
             con = connection;
         }
@@ -33,12 +33,12 @@ namespace CrudOperationADONet.Controllers
                     Description = dt.Rows[i]["Description"].ToString(),
                     UnitPrice = Convert.ToDecimal(dt.Rows[i]["UnitPrice"]),
                     CategoryId = Convert.ToInt32(dt.Rows[i]["CategoryId"])
-                    });
-                }
-                
+                });
+            }
+
             return View(lstprd);
         }
-            public IActionResult Create()
+        public IActionResult Create()
         {
             SqlConnection conn = new SqlConnection(con.GetConnectionString("DbConnection"));
             SqlCommand cmd = new SqlCommand("Select * from Categories", conn);
@@ -69,7 +69,7 @@ namespace CrudOperationADONet.Controllers
             DataTable dt = new DataTable();
             da.Fill(dt);
 
-            for(int i=0;i<dt.Rows.Count;i++)
+            for (int i = 0; i < dt.Rows.Count; i++)
             {
                 Product obj = new Product();
                 //obj.ProductId = Convert.ToInt32(dt.Rows[i]["ProductId"]);
@@ -95,8 +95,8 @@ namespace CrudOperationADONet.Controllers
                     UnitPrice = Convert.ToDecimal(dt.Rows[i]["UnitPrice"]),
                     CategoryId = Convert.ToInt32(dt.Rows[i]["CategoryId"])
                 };
-            
-        }
+
+            }
             return lstproduct;
         }
 
@@ -114,6 +114,76 @@ namespace CrudOperationADONet.Controllers
             cmd.Parameters.AddWithValue("@CategoryId", model.CategoryId);
             cmd.Parameters.AddWithValue("@action", "add");
             cmd.ExecuteNonQuery();
+            conn.Close();
+            return RedirectToAction("Index");
+            return View();
+        }
+
+        public IActionResult Edit(int id)
+        {
+            Product lstprd = new Product();
+            SqlConnection conn = new SqlConnection(con.GetConnectionString("DbConnection"));
+            conn.Open();
+            SqlCommand cmd = new SqlCommand("Select * from Products where ProductId=" + id, conn);
+            SqlDataAdapter da = new SqlDataAdapter(cmd);
+            DataTable dt = new DataTable();
+            da.Fill(dt);
+
+            for (int i = 0; i < dt.Rows.Count; i++)
+            {
+                lstprd = new Product
+                {
+                    ProductId = Convert.ToInt32(dt.Rows[i]["ProductId"]),
+                    Name = dt.Rows[i]["Name"].ToString(),
+                    Description = dt.Rows[i]["Description"].ToString(),
+                    UnitPrice = Convert.ToDecimal(dt.Rows[i]["UnitPrice"]),
+                    CategoryId = Convert.ToInt32(dt.Rows[i]["CategoryId"])
+                };
+            }
+
+            cmd = new SqlCommand("Select * from Categories", conn);
+            SqlDataAdapter dab = new SqlDataAdapter(cmd);
+            DataTable dtb = new DataTable();
+            dab.Fill(dtb);
+
+            List<Category> cat = new List<Category>();
+            for (int i = 0; i < dtb.Rows.Count; i++)
+            {
+                cat.Add(new Category
+                {
+                    CategoryId = Convert.ToInt32(dtb.Rows[i]["CategoryId"]),
+                    Name = dtb.Rows[i]["Name"].ToString()
+                });
+            }
+            ViewBag.Categories = cat;
+
+            return View("Create",lstprd);
+        }
+        [HttpPost]
+            public IActionResult Edit(int id, Product model)
+        {
+            SqlConnection conn = new SqlConnection(con.GetConnectionString("DbConnection"));
+            conn.Open();
+            SqlCommand cmd = new SqlCommand("AddUpdateProduct", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@Name", model.Name);
+            cmd.Parameters.AddWithValue("@Description", model.Description);
+            cmd.Parameters.AddWithValue("@UnitPrice", model.UnitPrice);
+            cmd.Parameters.AddWithValue("@CategoryId", model.CategoryId);
+            cmd.Parameters.AddWithValue("@action", "update");
+            cmd.Parameters.AddWithValue("@ProductId", id);
+            cmd.ExecuteNonQuery();
+            conn.Close();
+            return RedirectToAction("Index");
+            return View();
+        }
+
+        public IActionResult Delete(int id)
+        {
+            SqlConnection conn = new SqlConnection(con.GetConnectionString("DbConnection"));
+            conn.Open();
+            SqlCommand cmd = new SqlCommand("delete from Products where ProductId=" + id, conn);
+            cmd.ExecuteReader();
             conn.Close();
             return RedirectToAction("Index");
             return View();
